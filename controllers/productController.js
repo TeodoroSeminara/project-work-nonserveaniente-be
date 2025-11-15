@@ -1,47 +1,52 @@
 const connection = require('../data/db');
-
+// SELECT * FROM products
 // INDEX
 function index(req, res) {
-    const sql = `SELECT * FROM products`;
-    connection.query(sql, (err, result) => {
-        if (err) return res.status(500).json({ error: "Database error sei un coglione" });
-        const products = result.map((product) => {
-            return {
-                ...product,
-                image_url: req.imagePath + product.image_url,
-            };
-        });
-        res.json(products);
+  const sql = `
+      SELECT p.*, 
+      MIN(pi.image_url) AS image_url
+      FROM products p
+      LEFT JOIN product_images pi ON p.id = pi.product_id
+      GROUP BY p.id`;
+  connection.query(sql, (err, result) => {
+    if (err) return res.status(500).json({ error: "Database error sei un coglione" });
+    const products = result.map((product) => {
+      return {
+        ...product,
+        image_url: req.imagePath + product.image_url,
+      };
     });
+    res.json(products);
+  });
 }
 
 // SHOW
 
 // la show serve a mostrare le immagini associate al prodotto nella pagina dettaglio prodotto DettaglioProdotto.jsx
 function show(req, res) {
-    const id = req.params.id;
+  const id = req.params.id;
 
-    const productSql = `
+  const productSql = `
       SELECT p.*, pi.image_url
       FROM products p
       LEFT JOIN product_images pi ON p.id = pi.product_id
       WHERE p.id = ?`
     ;
 
-    connection.query(productSql, [id], (err, results) => {
-        if (err) return res.status(500).json({ error: "Database error" });
-        if (results.length === 0) return res.status(404).json({ error: "Prodotto not found" });
+  connection.query(productSql, [id], (err, results) => {
+    if (err) return res.status(500).json({ error: "Database error" });
+    if (results.length === 0) return res.status(404).json({ error: "Prodotto not found" });
 
-        // Prendi i dati del prodotto dalla prima riga
-        const { id, name, description, price } = results[0];
-        // Crea un array con tutte le immagini
-        const images = results.map(row => req.imagePath + row.image_url);
+    // Prendi i dati del prodotto dalla prima riga
+    const { id, name, description, price } = results[0];
+    // Crea un array con tutte le immagini
+    const images = results.map(row => req.imagePath + row.image_url);
 
-        // Prepara l'oggetto prodotto con il campo images array
-        const product = { id, name, description, price, images };
+    // Prepara l'oggetto prodotto con il campo images array
+    const product = { id, name, description, price, images };
 
-        return res.json(product);
-    });
+    return res.json(product);
+  });
 }
 
 /* function show(req, res) {
