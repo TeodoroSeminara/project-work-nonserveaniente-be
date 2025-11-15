@@ -10,7 +10,7 @@ const router = express.Router();
 router.get('/', productController.index)
 
 // show
-/* router.get('/:id', productController.show) */
+router.get('/:id', productController.show)
 
 // store review 
 

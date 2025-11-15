@@ -2,46 +2,63 @@ const connection = require('../data/db');
 
 // INDEX
 function index(req, res) {
-  const sql = `SELECT * FROM products p LEFT JOIN product_images pi ON p.id=pi.product_id`;
-  connection.query(sql, (err, result) => {
-    if (err) return res.status(500).json({ error: "Database error sei un coglione" });
-    const products = result.map((product) => {
-      return {
-        ...product,
-        image_url: req.imagePath + product.image_url,
-      };
+    const sql = `SELECT * FROM products`;
+    connection.query(sql, (err, result) => {
+        if (err) return res.status(500).json({ error: "Database error sei un coglione" });
+        const products = result.map((product) => {
+            return {
+                ...product,
+                image_url: req.imagePath + product.image_url,
+            };
+        });
+        res.json(products);
     });
-    res.json(products);
-  });
 }
 
 // SHOW
-/* function show(req, res) {
-  const id = req.params.id;
 
-  const movieSql = `SELECT M.*, ROUND(AVG(R.vote)) AS average_vote
-    FROM movies M 
-    LEFT JOIN reviews R 
-    ON R.movie_id = M.id 
-    WHERE M.id = ?`
+// la show serve a mostrare le immagini associate al prodotto nella pagina dettaglio prodotto DettaglioProdotto.jsx
+function show(req, res) {
+    const id = req.params.id;
 
-  const reviewSql = 'SELECT * FROM reviews WHERE movie_id = ?';
+    const productSql = `
+      SELECT p.*, pi.image_url
+      FROM products p
+      LEFT JOIN product_images pi ON p.id = pi.product_id
+      WHERE p.id = ?`
+    ;
 
-  connection.query(movieSql, [id], (err, movieResult) => {
-    if (err) return res.status(500).json({ error: "Database error" });
-    if (movieResult.length === 0) return res.status(404).json({ error: "Movie not found" });
+    connection.query(productSql, [id], (err, results) => {
+        if (err) return res.status(500).json({ error: "Database error" });
+        if (results.length === 0) return res.status(404).json({ error: "Prodotto not found" });
 
-    const singleMovie = {...movieResult[0] };
-    singleMovie.image = req.imagePath + singleMovie.image;
+        // Prendi i dati del prodotto dalla prima riga
+        const { id, name, description, price } = results[0];
+        // Crea un array con tutte le immagini
+        const images = results.map(row => req.imagePath + row.image_url);
 
-    connection.query(reviewSql, [id], (err, reviewResult) => {
-      if (err) return res.status(500).json({ error: "Database error" });
+        // Prepara l'oggetto prodotto con il campo images array
+        const product = { id, name, description, price, images };
 
-      singleMovie.reviews = reviewResult;
-      singleMovie.average_vote = parseInt(singleMovie.average_vote);
-      return res.json(singleMovie); 
+        return res.json(product);
     });
-  });
+}
+
+/* function show(req, res) {
+    const id = req.params.id;
+
+    const productSql = `SELECT * FROM products p JOIN product_images pi ON p.id=pi.product_id WHERE p.id=pi.product_id`;
+
+    
+    connection.query(productSql, [id], (err, productResult) => {
+        if (err) return res.status(500).json({ error: "Database error" });
+        if (productResult.length === 0) return res.status(404).json({ error: "Prodotto not found" });
+
+        const singleProduct = { ...productResult[0] };
+        singleProduct.image_url = req.imagePath + singleProduct.image_url;
+        return res.json(singleProduct);
+
+    });
 } */
 
 // STORE 
@@ -79,4 +96,4 @@ function index(req, res) {
 
 } */
 
-module.exports = { index };
+module.exports = { index, show };
