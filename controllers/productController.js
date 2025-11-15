@@ -2,13 +2,13 @@ const connection = require('../data/db');
 
 // INDEX
 function index(req, res) {
-  const sql = `SELECT * FROM products p LEFT JOIN product_images pi ON p.id=pi.product_id WHERE p.id= ?`;
+  const sql = `SELECT * FROM products p LEFT JOIN product_images pi ON p.id=pi.product_id`;
   connection.query(sql, (err, result) => {
-    if (err) return res.status(500).json({ error: "Database error" });
+    if (err) return res.status(500).json({ error: "Database error sei un coglione" });
     const products = result.map((product) => {
       return {
         ...product,
-        image_url: req.imagePath + product.image,
+        image_url: req.imagePath + product.image_url,
       };
     });
     res.json(products);
