@@ -10,10 +10,10 @@ const router = express.Router();
 router.get('/', productController.index)
 
 // show
-router.get('/:id', productController.show)
+/* router.get('/:id', productController.show) */
 
 // store review 
 
-router.post('/:id/reviews', productController.storeReview)
+/* router.post('/:id/reviews', productController.storeReview) */
 
 module.exports = router;

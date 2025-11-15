@@ -1,14 +1,14 @@
-/* const connection = require('../data/db');
+const connection = require('../data/db');
 
 // INDEX
 function index(req, res) {
-  const sql = 'SELECT * FROM products';
+  const sql = `SELECT * FROM products p LEFT JOIN product_images pi ON p.id=pi.product_id WHERE p.id= ?`;
   connection.query(sql, (err, result) => {
     if (err) return res.status(500).json({ error: "Database error" });
-    const products = result.map((movie) => {
+    const products = result.map((product) => {
       return {
         ...product,
-        image: req.imagePath + movie.image,
+        image_url: req.imagePath + product.image,
       };
     });
     res.json(products);
@@ -16,7 +16,7 @@ function index(req, res) {
 }
 
 // SHOW
-function show(req, res) {
+/* function show(req, res) {
   const id = req.params.id;
 
   const movieSql = `SELECT M.*, ROUND(AVG(R.vote)) AS average_vote
@@ -42,11 +42,11 @@ function show(req, res) {
       return res.json(singleMovie); 
     });
   });
-}
+} */
 
 // STORE 
 
-function storeReview(req, res) {
+/* function storeReview(req, res) {
 
     // recuperiamo id da param
     const id = req.params.id;
@@ -66,17 +66,17 @@ function storeReview(req, res) {
         res.json({ id: result.insertId, message: 'Review added' });
     })
 
-}
+} */
 
 
 //DELETE 
 
-function delete(req,res) {
+/* function delete(req,res) {
     const id = req.params.id
 
     const productSQL = 'DELETE * FROM products WHERE id = ?'
 
 
-}
+} */
 
-module.exports = { index, show, storeReview }; */
+module.exports = { index };

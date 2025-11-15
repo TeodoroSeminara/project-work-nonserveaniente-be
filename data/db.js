@@ -2,7 +2,7 @@
 const mysql = require("mysql2");
 
 // Collegamento db, con richiami da .env per dati privati
-const connectio = mysql.createConnection({
+const connection = mysql.createConnection({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
@@ -10,7 +10,7 @@ const connectio = mysql.createConnection({
 })
 
 // log per check connessione db
-connectio.connect((err) => {
+connection.connect((err) => {
     if (err) throw err;
     console.log("Connected to MySQL");
 
