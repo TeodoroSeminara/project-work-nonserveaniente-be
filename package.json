@@ -1,4 +1,14 @@
 {
+
+  "name": "nonserveaniente",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node app.js",
+    "watch": "node --env-file=.env --watch app.js"
+  },
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^5.1.0",
