@@ -1,5 +1,5 @@
 const connection = require('../data/db');
-// SELECT * FROM products
+
 // INDEX
 function index(req, res) {
   const sql = `
@@ -49,23 +49,6 @@ function show(req, res) {
   });
 }
 
-/* function show(req, res) {
-    const id = req.params.id;
-
-    const productSql = `SELECT * FROM products p JOIN product_images pi ON p.id=pi.product_id WHERE p.id=pi.product_id`;
-
-    
-    connection.query(productSql, [id], (err, productResult) => {
-        if (err) return res.status(500).json({ error: "Database error" });
-        if (productResult.length === 0) return res.status(404).json({ error: "Prodotto not found" });
-
-        const singleProduct = { ...productResult[0] };
-        singleProduct.image_url = req.imagePath + singleProduct.image_url;
-        return res.json(singleProduct);
-
-    });
-} */
-
 // STORE 
 
 /* function storeReview(req, res) {
@@ -89,6 +72,8 @@ function show(req, res) {
     })
 
 } */
+
+//UPDATE E MODIFY/PATCH
 
 
 //DELETE 
