@@ -1,4 +1,7 @@
 const connection = require('../data/db');
+// moduli nativi di node.js, il path è per il percorso del file, fs è file system permette di gestire i file
+const fs = require('fs');
+const path = require('path');
 
 // INDEX
 function index(req, res) {
@@ -98,12 +101,39 @@ function storeProduct(req, res) {
 
 //DELETE 
 
-/* function delete(req,res) {
-    const id = req.params.id
+function deleteProduct(req, res) {
+  const productId = req.params.id;
 
-    const productSQL = 'DELETE * FROM products WHERE id = ?'
+  //Trova tutti i nomi delle immagini collegate a quel prodotto
+  connection.query(
+    'SELECT image_url FROM product_images WHERE product_id = ?',
+    [productId],
+    (err, images) => {
+      if (err) return res.status(500).json({ error: "Errore ricerca immagini" });
 
+      //Cancella ogni file immagine sulla cartella
+      images.forEach(img => {
+        // prende il path assoluto del pc __dirname è in base a dove sta la cartella effettivamente nel pc e arriva fino a image, dove cerca quella con il nome che ci interessa
+        const filePath = path.join(__dirname, '../public/images/', img.image_url);
+        try {
+          // è il comando per eliminare il file fisicamente dalla cartella
+          fs.unlinkSync(filePath);
+        } catch (e) {
+          // Se il file non esiste più o non c'era, viene ignorato l'errore
+        }
+      });
 
-} */
+      //  Cancella il prodotto (col ON DELETE CASCADE si cancellano anche le righe delle immagini nel db)
+      connection.query(
+        'DELETE FROM products WHERE id = ?',
+        [productId],
+        (err2, result) => {
+          if (err2) return res.status(500).json({ error: "Errore eliminazione prodotto" });
+          return res.json({ success: true, deleted_product_id: productId });
+        }
+      );
+    }
+  );
+}
 
-module.exports = { index, show, storeProduct };
+module.exports = { index, show, storeProduct, deleteProduct };

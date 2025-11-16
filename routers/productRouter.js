@@ -18,4 +18,8 @@ router.get('/:id', productController.show)
 
 router.post('/', upload.array('images'), productController.storeProduct);
 
+// delete
+router.delete('/:id', productController.deleteProduct);
+
+
 module.exports = router;
