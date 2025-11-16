@@ -2,6 +2,8 @@ const express = require("express");
 
 // importiamo il controller
 const productController = require('../controllers/productController');
+// importa upload
+const upload = require('../controllers/upload')
 
 // settiamo il router
 const router = express.Router();
@@ -14,6 +16,6 @@ router.get('/:id', productController.show)
 
 // store review 
 
-/* router.post('/:id/reviews', productController.storeReview) */
+router.post('/', upload.array('images'), productController.storeProduct);
 
 module.exports = router;

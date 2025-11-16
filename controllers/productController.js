@@ -51,27 +51,47 @@ function show(req, res) {
 
 // STORE 
 
-/* function storeReview(req, res) {
+function storeProduct(req, res) {
+  // Prendo i dati testuali (da campi form)
+  const { name, description, price } = req.body;
 
-    // recuperiamo id da param
-    const id = req.params.id;
+  // Query per aggiungere il prodotto al db
+  const sqlProdotto = "INSERT INTO products (name, description, price) VALUES (?, ?, ?)";
+  connection.query(sqlProdotto, [name, description, price], (err, result) => {
+    if (err) {
+      return res.status(500).json({ error: "Errore nel salvataggio prodotto" });
+    }
 
-    // recuperiamo i dati nel body
-    const { name, vote, text } = req.body;
+    // Id del prodotto appena creato
+    const productId = result.insertId;
 
-    // prepariamo la query per la chiamata al DB
-    const sql = 'INSERT INTO `reviews` (`name`, `vote`, `text`, `movie_id`) VALUES (?,?,?,?)';
+    // Se hai caricato delle immagini (array di files)
+    if (req.files && req.files.length > 0) {
+      // Preparo array delle info da inserire nel db immagini
+      const imagesToInsert = req.files.map(file => [productId, file.filename]);
+      // Costruisco la query per salvare tutte le immagini in una volta
+      const sqlImmagini = "INSERT INTO product_images (product_id, image_url) VALUES ?";
+      connection.query(sqlImmagini, [imagesToInsert], (err2) => {
+        if (err2) {
+          return res.status(500).json({ error: "Errore nel salvataggio immagini" });
+        }
+        // Rispondere con successo, id prodotto e nomi file immagini
+        return res.json({
+          success: true,
+          product_id: productId,
+          immagini: imagesToInsert.map(i => i[1])
+        });
+      });
+    } else {
+      // Nessuna immagine caricata, rispondi solo con id prodotto
+      return res.json({
+        success: true,
+        product_id: productId
+      });
+    }
+  });
+}
 
-    // eseguiamo la query (con check preventivo dei dati)
-    connection.query(sql, [name, vote, text, id], (err, result) => {
-        // se c'è errore server DB
-        if (err) return res.status(500).json({ error: 'Database queri failed' });
-        // se va tutto bene
-        res.status(201);
-        res.json({ id: result.insertId, message: 'Review added' });
-    })
-
-} */
 
 //UPDATE E MODIFY/PATCH
 
@@ -86,4 +106,4 @@ function show(req, res) {
 
 } */
 
-module.exports = { index, show };
+module.exports = { index, show, storeProduct };

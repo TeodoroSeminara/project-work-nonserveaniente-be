@@ -19,7 +19,7 @@ const productRouter = require("./routers/productRouter")
 const cors = require("cors");
 
 
-app.use(cors({origin: process.env.HOST}));  
+app.use(cors({ origin: process.env.HOST }));
 
 
 
