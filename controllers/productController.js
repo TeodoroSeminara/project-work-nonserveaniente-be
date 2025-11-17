@@ -136,4 +136,5 @@ function deleteProduct(req, res) {
   );
 }
 
+
 module.exports = { index, show, storeProduct, deleteProduct };
