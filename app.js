@@ -12,14 +12,21 @@ const notFound = require("./middlewares/notFound");
 
 const imagePath = require("./middlewares/ImagePath")
 
-// importiamo rotta
+// importiamo rotta products
 const productRouter = require("./routers/productRouter")
+
+
+// rotta invoice
+const invoiceRouter = require("./routers/invoiceRouter");
+
+// rotta payment
+const paymentRouter = require("./routers/paymentRouter");
 
 // importiamo CORS
 const cors = require("cors");
 
 
-app.use(cors({origin: process.env.HOST}));  
+app.use(cors({ origin: process.env.HOST }));
 
 
 
@@ -31,6 +38,13 @@ app.use(express.json());
 
 app.use(imagePath);
 
+// invoices
+app.use("/api/nonserveaniente/invoices", invoiceRouter);
+
+// payments
+app.use("/api/nonserveaniente/payments", paymentRouter);
+
+// product
 app.use("/api/nonserveaniente", productRouter);
 
 // impostiamo la rotta di home

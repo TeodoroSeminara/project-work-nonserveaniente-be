@@ -2,18 +2,31 @@ const express = require("express");
 
 // importiamo il controller
 const productController = require('../controllers/productController');
+// importa upload
+const upload = require('../controllers/upload')
 
 // settiamo il router
 const router = express.Router();
 
 // index
-router.get('/', productController.index)
+router.get('/', productController.index);
 
-// show
-router.get('/:id', productController.show)
+// show by slug — attenzione: questa rotta ora gestisce lo slug come unico identificatore!
+router.get('/:slug', productController.show);
 
-// store review 
+// crea prodotto
+router.post('/', upload.array('images'), productController.storeProduct);
 
-/* router.post('/:id/reviews', productController.storeReview) */
+// elimina prodotto by slug
+// router.delete('/:slug', productController.deleteProduct);
+// DELETE by id
+router.delete('/:id', productController.deleteProduct);
+
+
+// Update info prodotto (PATCH/PUT)
+router.put('/:slug', upload.array('images'), productController.updateProduct);
+
+// Aggiungi immagini a un prodotto esistente
+router.post('/:slug/images', upload.array('images'), productController.addImages);
 
 module.exports = router;
