@@ -18,7 +18,10 @@ router.get('/:slug', productController.show);
 router.post('/', upload.array('images'), productController.storeProduct);
 
 // elimina prodotto by slug
-router.delete('/:slug', productController.deleteProduct);
+// router.delete('/:slug', productController.deleteProduct);
+// DELETE by id
+router.delete('/:id', productController.deleteProduct);
+
 
 // Update info prodotto (PATCH/PUT)
 router.put('/:slug', upload.array('images'), productController.updateProduct);

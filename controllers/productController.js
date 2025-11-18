@@ -32,7 +32,7 @@ function index(req, res) {
         name: product.name,
         description: product.description,
         price: product.price,
-        slug: product.slug, // --- AGGIUNTO: restituisce slug
+        slug: product.slug,
         image_url: req.imagePath + product.image_url,
       };
     });
@@ -40,7 +40,7 @@ function index(req, res) {
   });
 }
 
-// SHOW by slug (nuova funzione per vedere prodotto via slug)
+// SHOW con lo slug, al posto dell'id va usato il nome slug
 function show(req, res) {
   const slug = req.params.slug;
   const productSql = `
@@ -97,41 +97,63 @@ function storeProduct(req, res) {
 }
 
 // DELETE by slug
+// function deleteProduct(req, res) {
+//   const slug = req.params.slug;
+//   // Trova l'id tramite slug
+//   connection.query('SELECT id FROM products WHERE slug = ?', [slug], (err, results) => {
+//     if (err) return res.status(500).json({ error: "Errore ricerca prodotto" });
+//     if (results.length === 0) return res.status(404).json({ error: "Prodotto not found" });
+//     const productId = results[0].id;
+
+// Cancella tutte le immagini collegate
+//     connection.query(
+//       'SELECT image_url FROM product_images WHERE product_id = ?',
+//       [productId],
+//       (err2, images) => {
+//         if (err2) return res.status(500).json({ error: "Errore ricerca immagini" });
+
+//         images.forEach(img => {
+//           const filePath = path.join(__dirname, '../public/images/', img.image_url);
+//           try {
+//             fs.unlinkSync(filePath);
+//           } catch (e) { }
+//         });
+
+//         // Cancella il prodotto principale (cascade cancella immagini dal db)
+//         connection.query(
+//           'DELETE FROM products WHERE id = ?',
+//           [productId],
+//           (err3, result) => {
+//             if (err3) return res.status(500).json({ error: "Errore eliminazione prodotto" });
+//             return res.json({ success: true, deleted_slug: slug });
+//           }
+//         );
+//       }
+//     );
+//   });
+// }
+
 function deleteProduct(req, res) {
-  const slug = req.params.slug;
-  // Trova l'id tramite slug
-  connection.query('SELECT id FROM products WHERE slug = ?', [slug], (err, results) => {
-    if (err) return res.status(500).json({ error: "Errore ricerca prodotto" });
-    if (results.length === 0) return res.status(404).json({ error: "Prodotto not found" });
-    const productId = results[0].id;
+  const id = req.params.id;
+  // Cancella immagini collegate
+  connection.query('SELECT image_url FROM product_images WHERE product_id = ?', [id], (err2, images) => {
+    if (err2) return res.status(500).json({ error: "Errore ricerca immagini" });
 
-    // Cancella tutte le immagini collegate
-    connection.query(
-      'SELECT image_url FROM product_images WHERE product_id = ?',
-      [productId],
-      (err2, images) => {
-        if (err2) return res.status(500).json({ error: "Errore ricerca immagini" });
-
-        images.forEach(img => {
-          const filePath = path.join(__dirname, '../public/images/', img.image_url);
-          try {
-            fs.unlinkSync(filePath);
-          } catch (e) { }
-        });
-
-        // Cancella il prodotto principale (cascade cancella immagini dal db)
-        connection.query(
-          'DELETE FROM products WHERE id = ?',
-          [productId],
-          (err3, result) => {
-            if (err3) return res.status(500).json({ error: "Errore eliminazione prodotto" });
-            return res.json({ success: true, deleted_slug: slug });
-          }
-        );
+    images.forEach(img => {
+      if (img.image_url) {
+        const filePath = path.join(__dirname, '../public/images/', img.image_url);
+        try { fs.unlinkSync(filePath); } catch (e) { }
       }
-    );
+    });
+
+    // Cancella prodotto principale
+    connection.query('DELETE FROM products WHERE id = ?', [id], (err3, result) => {
+      if (err3) return res.status(500).json({ error: "Errore eliminazione prodotto" });
+      return res.json({ success: true, deleted_id: id });
+    });
   });
 }
+
 
 // UPDATE prodotto by slug
 function updateProduct(req, res) {
