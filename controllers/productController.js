@@ -204,11 +204,11 @@ function addImages(req, res) {
   });
 }
 
-// Barra di ricerca 
+// Funzione filteredIndex aggiornata per gestire filtri multipli
 function filteredIndex(req, res) {
   const {
-    category,
-    utility,
+    category,    // può essere "1,2,3"
+    utility,     // può essere "1,3,5"
     price_min,
     price_max,
     id_from,
@@ -222,36 +222,53 @@ function filteredIndex(req, res) {
   let where = [];
   let params = [];
 
+  // CATEGORY - gestisce valori multipli
   if (category) {
-    where.push("p.category_id = ?");
-    params.push(category);
+    const categoryIds = category.split(',').map(c => parseInt(c.trim())).filter(c => !isNaN(c));
+    if (categoryIds.length > 0) {
+      const placeholders = categoryIds.map(() => '?').join(',');
+      where.push(`p.category_id IN (${placeholders})`);
+      params.push(...categoryIds);
+    }
   }
+
+  // UTILITY - gestisce valori multipli
   if (utility) {
-    where.push("p.utility = ?");
-    params.push(utility);
+    const utilityValues = utility.split(',').map(u => parseInt(u.trim())).filter(u => !isNaN(u));
+    if (utilityValues.length > 0) {
+      const placeholders = utilityValues.map(() => '?').join(',');
+      where.push(`p.usefulness IN (${placeholders})`);
+      params.push(...utilityValues);
+    }
   }
+
+  // PRICE RANGE
   if (price_min) {
     where.push("p.price >= ?");
-    params.push(price_min);
+    params.push(parseFloat(price_min));
   }
   if (price_max) {
     where.push("p.price <= ?");
-    params.push(price_max);
+    params.push(parseFloat(price_max));
   }
+
+  // ID RANGE
   if (id_from) {
     where.push("p.id >= ?");
-    params.push(id_from);
+    params.push(parseInt(id_from));
   }
   if (id_to) {
     where.push("p.id <= ?");
-    params.push(id_to);
+    params.push(parseInt(id_to));
   }
+
+  // NAME SEARCH
   if (name) {
     where.push("p.name LIKE ?");
     params.push(`%${name}%`);
   }
 
-  // QUERY con JOIN immagini
+  // BASE QUERY con JOIN immagini
   let sql = `
     SELECT p.*, 
       MIN(pi.image_url) AS image_url
@@ -259,13 +276,14 @@ function filteredIndex(req, res) {
     LEFT JOIN product_images pi ON p.id = pi.product_id
   `;
 
+  // Aggiungi WHERE se ci sono filtri
   if (where.length > 0) {
     sql += " WHERE " + where.join(" AND ");
   }
 
   sql += " GROUP BY p.id";
 
-  // Sorting
+  // SORTING
   if (sort === "price_asc") sql += " ORDER BY p.price ASC";
   else if (sort === "price_desc") sql += " ORDER BY p.price DESC";
   else if (sort === "name_asc") sql += " ORDER BY p.name ASC";
@@ -274,28 +292,34 @@ function filteredIndex(req, res) {
   else if (sort === "id_asc") sql += " ORDER BY p.id ASC";
   else sql += " ORDER BY p.id ASC";
 
-  // Limit / Offset
+  // LIMIT / OFFSET per paginazione
   const lim = parseInt(limit) || 12;
   const off = parseInt(offset) || 0;
   sql += " LIMIT ? OFFSET ?";
   params.push(lim, off);
 
+  // Esegui query
   connection.query(sql, params, (err, result) => {
-    if (err) return res.status(500).json({ error: "Database error" });
-    // Facoltativo: PREPARA image_url con il path statico delle immagini
+    if (err) {
+      console.error("Database error:", err);
+      return res.status(500).json({ error: "Database error" });
+    }
+
+    // Formatta i risultati
     const products = result.map(product => ({
       name: product.name,
       description: product.description,
       price: product.price,
       slug: product.slug,
+      utility: product.utility,
+      category_id: product.category_id,
       image_url: product.image_url
         ? `${req.imagePath}${product.image_url}`
         : null,
-      // aggiungi altri campi se vuoi!
     }));
+
     return res.json(products);
   });
 }
-
 
 module.exports = { show, storeProduct, deleteProduct, updateProduct, addImages, filteredIndex };
