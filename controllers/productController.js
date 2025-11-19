@@ -97,62 +97,62 @@ function storeProduct(req, res) {
 }
 
 // DELETE by slug
-// function deleteProduct(req, res) {
-//   const slug = req.params.slug;
-//   // Trova l'id tramite slug
-//   connection.query('SELECT id FROM products WHERE slug = ?', [slug], (err, results) => {
-//     if (err) return res.status(500).json({ error: "Errore ricerca prodotto" });
-//     if (results.length === 0) return res.status(404).json({ error: "Prodotto not found" });
-//     const productId = results[0].id;
-
-// Cancella tutte le immagini collegate
-//     connection.query(
-//       'SELECT image_url FROM product_images WHERE product_id = ?',
-//       [productId],
-//       (err2, images) => {
-//         if (err2) return res.status(500).json({ error: "Errore ricerca immagini" });
-
-//         images.forEach(img => {
-//           const filePath = path.join(__dirname, '../public/images/', img.image_url);
-//           try {
-//             fs.unlinkSync(filePath);
-//           } catch (e) { }
-//         });
-
-//         // Cancella il prodotto principale (cascade cancella immagini dal db)
-//         connection.query(
-//           'DELETE FROM products WHERE id = ?',
-//           [productId],
-//           (err3, result) => {
-//             if (err3) return res.status(500).json({ error: "Errore eliminazione prodotto" });
-//             return res.json({ success: true, deleted_slug: slug });
-//           }
-//         );
-//       }
-//     );
-//   });
-// }
-
 function deleteProduct(req, res) {
-  const id = req.params.id;
-  // Cancella immagini collegate
-  connection.query('SELECT image_url FROM product_images WHERE product_id = ?', [id], (err2, images) => {
-    if (err2) return res.status(500).json({ error: "Errore ricerca immagini" });
+  const slug = req.params.slug;
+  // Trova l'id tramite slug
+  connection.query('SELECT id FROM products WHERE slug = ?', [slug], (err, results) => {
+    if (err) return res.status(500).json({ error: "Errore ricerca prodotto" });
+    if (results.length === 0) return res.status(404).json({ error: "Prodotto not found" });
+    const productId = results[0].id;
 
-    images.forEach(img => {
-      if (img.image_url) {
-        const filePath = path.join(__dirname, '../public/images/', img.image_url);
-        try { fs.unlinkSync(filePath); } catch (e) { }
+    // Cancella tutte le immagini collegate
+    connection.query(
+      'SELECT image_url FROM product_images WHERE product_id = ?',
+      [productId],
+      (err2, images) => {
+        if (err2) return res.status(500).json({ error: "Errore ricerca immagini" });
+
+        images.forEach(img => {
+          const filePath = path.join(__dirname, '../public/images/', img.image_url);
+          try {
+            fs.unlinkSync(filePath);
+          } catch (e) { }
+        });
+
+        // Cancella il prodotto principale (cascade cancella immagini dal db)
+        connection.query(
+          'DELETE FROM products WHERE id = ?',
+          [productId],
+          (err3, result) => {
+            if (err3) return res.status(500).json({ error: "Errore eliminazione prodotto" });
+            return res.json({ success: true, deleted_slug: slug });
+          }
+        );
       }
-    });
-
-    // Cancella prodotto principale
-    connection.query('DELETE FROM products WHERE id = ?', [id], (err3, result) => {
-      if (err3) return res.status(500).json({ error: "Errore eliminazione prodotto" });
-      return res.json({ success: true, deleted_id: id });
-    });
+    );
   });
 }
+
+// function deleteProduct(req, res) {
+//   const id = req.params.id;
+//   // Cancella immagini collegate
+//   connection.query('SELECT image_url FROM product_images WHERE product_id = ?', [id], (err2, images) => {
+//     if (err2) return res.status(500).json({ error: "Errore ricerca immagini" });
+
+//     images.forEach(img => {
+//       if (img.image_url) {
+//         const filePath = path.join(__dirname, '../public/images/', img.image_url);
+//         try { fs.unlinkSync(filePath); } catch (e) { }
+//       }
+//     });
+
+//     // Cancella prodotto principale
+//     connection.query('DELETE FROM products WHERE id = ?', [id], (err3, result) => {
+//       if (err3) return res.status(500).json({ error: "Errore eliminazione prodotto" });
+//       return res.json({ success: true, deleted_id: id });
+//     });
+//   });
+// }
 
 
 // UPDATE prodotto by slug
@@ -204,5 +204,81 @@ function addImages(req, res) {
   });
 }
 
+// Barra di ricerca 
+function filteredIndex(req, res) {
+  // Estrai tutti i filtri e parametri
+  const {
+    category,
+    utility,
+    price_min,
+    price_max,
+    id_from,
+    id_to,
+    name,
+    sort,
+    limit,
+    offset
+  } = req.query;
 
-module.exports = { index, show, storeProduct, deleteProduct, updateProduct, addImages };
+  // Costruisci condizioni dinamiche
+  let where = [];
+  let params = [];
+
+  if (category) {
+    where.push("category_id = ?");
+    params.push(category);
+  }
+  if (utility) {
+    where.push("utility = ?");
+    params.push(utility);
+  }
+  if (price_min) {
+    where.push("price >= ?");
+    params.push(price_min);
+  }
+  if (price_max) {
+    where.push("price <= ?");
+    params.push(price_max);
+  }
+  if (id_from) {
+    where.push("id >= ?");
+    params.push(id_from);
+  }
+  if (id_to) {
+    where.push("id <= ?");
+    params.push(id_to);
+  }
+  if (name) {
+    where.push("name LIKE ?");
+    params.push(`%${name}%`);
+  }
+
+  // Base query
+  let sql = "SELECT * FROM products";
+  if (where.length > 0) {
+    sql += " WHERE " + where.join(" AND ");
+  }
+
+  // Sorting (aggiungi ASC/DESC per id, prezzo, nome)
+  if (sort === "price_asc") sql += " ORDER BY price ASC";
+  else if (sort === "price_desc") sql += " ORDER BY price DESC";
+  else if (sort === "name_asc") sql += " ORDER BY name ASC";
+  else if (sort === "name_desc") sql += " ORDER BY name DESC";
+  else if (sort === "id_desc") sql += " ORDER BY id DESC";
+  else if (sort === "id_asc") sql += " ORDER BY id ASC";
+  else sql += " ORDER BY id DESC"; // default: più recenti
+
+  // Limit e offset per paginazione
+  const lim = parseInt(limit) || 12;   // default 12
+  const off = parseInt(offset) || 0;   // default 0
+  sql += " LIMIT ? OFFSET ?";
+  params.push(lim, off);
+
+  // Esegui query
+  connection.query(sql, params, (err, result) => {
+    if (err) return res.status(500).json({ error: "Database error" });
+    return res.json(result);
+  });
+}
+
+module.exports = { index, show, storeProduct, deleteProduct, updateProduct, addImages, filteredIndex };

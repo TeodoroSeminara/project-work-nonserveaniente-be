@@ -14,6 +14,10 @@ router.get('/', productController.index);
 // show by slug — attenzione: questa rotta ora gestisce lo slug come unico identificatore!
 router.get('/:slug', productController.show);
 
+// Rotta per ricerca e filtri
+router.get('/', productController.filteredIndex);
+
+
 // crea prodotto
 router.post('/', upload.array('images'), productController.storeProduct);
 
