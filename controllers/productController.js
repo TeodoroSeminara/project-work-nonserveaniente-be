@@ -18,27 +18,27 @@ function generateSlug(name) {
 }
 
 // INDEX - restituisce anche lo slug
-function index(req, res) {
-  const sql = `
-    SELECT p.*, 
-      MIN(pi.image_url) AS image_url
-    FROM products p
-    LEFT JOIN product_images pi ON p.id = pi.product_id
-    GROUP BY p.id`;
-  connection.query(sql, (err, result) => {
-    if (err) return res.status(500).json({ error: "Database error" });
-    const products = result.map((product) => {
-      return {
-        name: product.name,
-        description: product.description,
-        price: product.price,
-        slug: product.slug,
-        image_url: req.imagePath + product.image_url,
-      };
-    });
-    res.json(products);
-  });
-}
+// function index(req, res) {
+//   const sql = `
+//     SELECT p.*, 
+//       MIN(pi.image_url) AS image_url
+//     FROM products p
+//     LEFT JOIN product_images pi ON p.id = pi.product_id
+//     GROUP BY p.id`;
+//   connection.query(sql, (err, result) => {
+//     if (err) return res.status(500).json({ error: "Database error" });
+//     const products = result.map((product) => {
+//       return {
+//         name: product.name,
+//         description: product.description,
+//         price: product.price,
+//         slug: product.slug,
+//         image_url: req.imagePath + product.image_url,
+//       };
+//     });
+//     res.json(products);
+//   });
+// }
 
 // SHOW con lo slug, al posto dell'id va usato il nome slug
 function show(req, res) {
@@ -206,7 +206,6 @@ function addImages(req, res) {
 
 // Barra di ricerca 
 function filteredIndex(req, res) {
-  // Estrai tutti i filtri e parametri
   const {
     category,
     utility,
@@ -220,65 +219,83 @@ function filteredIndex(req, res) {
     offset
   } = req.query;
 
-  // Costruisci condizioni dinamiche
   let where = [];
   let params = [];
 
   if (category) {
-    where.push("category_id = ?");
+    where.push("p.category_id = ?");
     params.push(category);
   }
   if (utility) {
-    where.push("utility = ?");
+    where.push("p.utility = ?");
     params.push(utility);
   }
   if (price_min) {
-    where.push("price >= ?");
+    where.push("p.price >= ?");
     params.push(price_min);
   }
   if (price_max) {
-    where.push("price <= ?");
+    where.push("p.price <= ?");
     params.push(price_max);
   }
   if (id_from) {
-    where.push("id >= ?");
+    where.push("p.id >= ?");
     params.push(id_from);
   }
   if (id_to) {
-    where.push("id <= ?");
+    where.push("p.id <= ?");
     params.push(id_to);
   }
   if (name) {
-    where.push("name LIKE ?");
+    where.push("p.name LIKE ?");
     params.push(`%${name}%`);
   }
 
-  // Base query
-  let sql = "SELECT * FROM products";
+  // QUERY con JOIN immagini
+  let sql = `
+    SELECT p.*, 
+      MIN(pi.image_url) AS image_url
+    FROM products p
+    LEFT JOIN product_images pi ON p.id = pi.product_id
+  `;
+
   if (where.length > 0) {
     sql += " WHERE " + where.join(" AND ");
   }
 
-  // Sorting (aggiungi ASC/DESC per id, prezzo, nome)
-  if (sort === "price_asc") sql += " ORDER BY price ASC";
-  else if (sort === "price_desc") sql += " ORDER BY price DESC";
-  else if (sort === "name_asc") sql += " ORDER BY name ASC";
-  else if (sort === "name_desc") sql += " ORDER BY name DESC";
-  else if (sort === "id_desc") sql += " ORDER BY id DESC";
-  else if (sort === "id_asc") sql += " ORDER BY id ASC";
-  else sql += " ORDER BY id DESC"; // default: più recenti
+  sql += " GROUP BY p.id";
 
-  // Limit e offset per paginazione
-  const lim = parseInt(limit) || 12;   // default 12
-  const off = parseInt(offset) || 0;   // default 0
+  // Sorting
+  if (sort === "price_asc") sql += " ORDER BY p.price ASC";
+  else if (sort === "price_desc") sql += " ORDER BY p.price DESC";
+  else if (sort === "name_asc") sql += " ORDER BY p.name ASC";
+  else if (sort === "name_desc") sql += " ORDER BY p.name DESC";
+  else if (sort === "id_desc") sql += " ORDER BY p.id DESC";
+  else if (sort === "id_asc") sql += " ORDER BY p.id ASC";
+  else sql += " ORDER BY p.id ASC";
+
+  // Limit / Offset
+  const lim = parseInt(limit) || 12;
+  const off = parseInt(offset) || 0;
   sql += " LIMIT ? OFFSET ?";
   params.push(lim, off);
 
-  // Esegui query
   connection.query(sql, params, (err, result) => {
     if (err) return res.status(500).json({ error: "Database error" });
-    return res.json(result);
+    // Facoltativo: PREPARA image_url con il path statico delle immagini
+    const products = result.map(product => ({
+      name: product.name,
+      description: product.description,
+      price: product.price,
+      slug: product.slug,
+      image_url: product.image_url
+        ? `${req.imagePath}${product.image_url}`
+        : null,
+      // aggiungi altri campi se vuoi!
+    }));
+    return res.json(products);
   });
 }
 
-module.exports = { index, show, storeProduct, deleteProduct, updateProduct, addImages, filteredIndex };
+
+module.exports = { show, storeProduct, deleteProduct, updateProduct, addImages, filteredIndex };
