@@ -1,4 +1,8 @@
 const connection = require('../data/db');
+const {
+    sendOrderConfirmationToCustomer,
+    sendOrderNotificationToStore,
+} = require('../utils/mailer');
 
 // helper per order_number
 function generateOrderNumber() {
@@ -268,6 +272,42 @@ function storeInvoice(req, res) {
                             });
                         }
 
+                        // prepariamo i dati della mail
+                        const invoiceForEmail = {
+                            id: invoiceId,
+                            order_number,
+                            total_amount,
+                            shipping_cost: shipCost.toFixed(2),
+                            status: invoiceStatus,
+                            shipping_address,
+                            shipping_cap,
+                            shipping_city,
+                            shipping_description: shipping_description || null,
+                            billing_address: billing_address || null,
+                            billing_cap: billing_cap || null,
+                            billing_city: billing_city || null,
+                            billing_description: billing_description || null,
+                            name,
+                            surname,
+                            phone,
+                            email,
+                            created_at: new Date(),
+                        };
+
+                        const itemsForEmail = lines.map(l => ({
+                            product_id: l.product_id,
+                            name_product: l.name_product,
+                            quantity: l.quantity,
+                            unit_price: l.unit_price,
+                            price_for_quantity: l.price_for_quantity,
+                        }));
+
+                        sendOrderConfirmationToCustomer(invoiceForEmail, itemsForEmail)
+                            .catch(err => console.error("Errore invio mail al cliente:", err));
+
+                        sendOrderNotificationToStore(invoiceForEmail, itemsForEmail)
+                            .catch(err => console.error("Errore invio mail allo store:", err));
+                            
                         return res.status(201).json({
                             success: true,
                             message: "Fattura creata correttamente",
