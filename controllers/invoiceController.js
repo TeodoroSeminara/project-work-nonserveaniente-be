@@ -12,6 +12,11 @@ function generateOrderNumber() {
     return `ORD-${datePart}-${timePart}-${randPart}`;
 }
 
+function isValidEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+}
+
 // INDEX – tutte le fatture (solo intestazione, senza righe)
 function index(req, res) {
     const sql = `
@@ -87,6 +92,9 @@ function storeInvoice(req, res) {
     }
     if (!name || !surname || !phone || !email) {
         return res.status(400).json({ error: "name, surname, phone ed email sono obbligatori" });
+    }
+    if (!isValidEmail(email)) {
+        return res.status(400).json({ error: "L'email inserita non è valida" });
     }
     if (!Array.isArray(items) || items.length === 0) {
         return res.status(400).json({ error: "Devi specificare almeno una riga nella fattura (items)" });
@@ -314,6 +322,9 @@ function updateInvoice(req, res) {
     }
     if (!name || !surname || !phone || !email) {
         return res.status(400).json({ error: "name, surname, phone ed email sono obbligatori" });
+    }
+    if (!isValidEmail(email)) {
+        return res.status(400).json({ error: "L'email inserita non è valida" });
     }
     if (!Array.isArray(items) || items.length === 0) {
         return res.status(400).json({ error: "Devi specificare almeno una riga nella fattura (items)" });
