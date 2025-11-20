@@ -415,8 +415,7 @@ function updateInvoice(req, res) {
                 const productsSql = `
           SELECT id, name, price
           FROM products
-          WHERE id IN (?)
-        `;
+          WHERE id IN (?)`;
 
                 connection.query(productsSql, [productIds], (errProd, prodRows) => {
                     if (errProd) {
@@ -486,8 +485,7 @@ function updateInvoice(req, res) {
               surname = ?,
               phone = ?,
               email = ?
-            WHERE id = ?
-          `;
+            WHERE id = ?          `;
 
                     const invParams = [
                         total_amount,

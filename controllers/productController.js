@@ -40,38 +40,6 @@ function show(req, res) {
   });
 }
 
-// STORE - insert con slug
-// function storeProduct(req, res) {
-//   const { name, description, price } = req.body;
-//   const slug = generateSlug(name);
-
-//   const sqlProdotto = "INSERT INTO products (name, description, price, slug) VALUES (?, ?, ?, ?)";
-//   connection.query(sqlProdotto, [name, description, price, slug], (err, result) => {
-//     if (err) {
-//       return res.status(500).json({ error: "Errore nel salvataggio prodotto" });
-//     }
-
-//     const productId = result.insertId;
-
-//     if (req.files && req.files.length > 0) {
-//       const imagesToInsert = req.files.map(file => [productId, file.filename]);
-//       const sqlImmagini = "INSERT INTO product_images (product_id, image_url) VALUES ?";
-//       connection.query(sqlImmagini, [imagesToInsert], (err2) => {
-//         if (err2) return res.status(500).json({ error: "Errore nel salvataggio immagini" });
-//         return res.json({
-//           success: true,
-//           slug,
-//           immagini: imagesToInsert.map(i => i[1])
-//         });
-//       });
-//     } else {
-//       return res.json({
-//         success: true,
-//         slug
-//       });
-//     }
-//   });
-// }
 
 function storeProduct(req, res) {
   const { name, description, price } = req.body;
@@ -168,28 +136,6 @@ function deleteProduct(req, res) {
     );
   });
 }
-
-// function deleteProduct(req, res) {
-//   const id = req.params.id;
-//   // Cancella immagini collegate
-//   connection.query('SELECT image_url FROM product_images WHERE product_id = ?', [id], (err2, images) => {
-//     if (err2) return res.status(500).json({ error: "Errore ricerca immagini" });
-
-//     images.forEach(img => {
-//       if (img.image_url) {
-//         const filePath = path.join(__dirname, '../public/images/', img.image_url);
-//         try { fs.unlinkSync(filePath); } catch (e) { }
-//       }
-//     });
-
-//     // Cancella prodotto principale
-//     connection.query('DELETE FROM products WHERE id = ?', [id], (err3, result) => {
-//       if (err3) return res.status(500).json({ error: "Errore eliminazione prodotto" });
-//       return res.json({ success: true, deleted_id: id });
-//     });
-//   });
-// }
-
 
 // UPDATE prodotto by slug
 function updateProduct(req, res) {
