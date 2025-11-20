@@ -14,6 +14,9 @@ const router = express.Router();
 // Rotta per ricerca e filtri
 router.get('/', productController.filteredIndex);
 
+// Rotta per tutte le categorie
+router.get("/categories", productController.getCategories);
+
 // show by slug — attenzione: questa rotta ora gestisce lo slug come unico identificatore!
 router.get('/:slug', productController.show);
 

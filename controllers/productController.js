@@ -360,4 +360,15 @@ function filteredIndex(req, res) {
   });
 }
 
-module.exports = { show, storeProduct, deleteProduct, updateProduct, addImages, filteredIndex };
+function getCategories(req, res) {
+  const sql = `SELECT id, name FROM categories ORDER BY id ASC`;
+  connection.query(sql, (err, results) => {
+    if (err) {
+      console.error("Database error:", err);
+      return res.status(500).json({ error: "Database error" });
+    }
+    return res.json(results);
+  });
+}
+
+module.exports = { show, storeProduct, deleteProduct, updateProduct, addImages, filteredIndex, getCategories };
