@@ -86,8 +86,10 @@ function storeInvoice(req, res) {
         phone,
         email,
         shipping_cost,
-        status,
+        /* status, */
         items,
+        payment_provider,
+        payment_transaction_id
     } = req.body;
 
     // validazioni base
@@ -114,7 +116,7 @@ function storeInvoice(req, res) {
     }
 
     const productIds = items.map(it => it.product_id);
-    const invoiceStatus = status || 'pending';
+    //const invoiceStatus = status || 'pending';
     const order_number = generateOrderNumber();
     console.log('order_number che sto generando:', order_number);
 
@@ -188,7 +190,6 @@ function storeInvoice(req, res) {
           order_number,
           total_amount,
           shipping_cost,
-          status,
           shipping_address,
           shipping_cap,
           shipping_city,
@@ -200,15 +201,17 @@ function storeInvoice(req, res) {
           name,
           surname,
           phone,
-          email
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `;
+          email,
+          payment_provider,
+          payment_transaction_id
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) 
+      `; //eliminato status il giorno 20/11/2025
 
             const invParams = [
                 order_number,
                 total_amount,
                 shipCost,
-                invoiceStatus,
+                /* invoiceStatus, */
                 shipping_address,
                 shipping_cap,
                 shipping_city,
@@ -221,6 +224,8 @@ function storeInvoice(req, res) {
                 surname,
                 phone,
                 email,
+                payment_provider || null,
+                payment_transaction_id || null,
             ];
 
             connection.query(invSql, invParams, (errInv, invResult) => {
@@ -278,7 +283,7 @@ function storeInvoice(req, res) {
                             order_number,
                             total_amount,
                             shipping_cost: shipCost.toFixed(2),
-                            status: invoiceStatus,
+                            //status: invoiceStatus,
                             shipping_address,
                             shipping_cap,
                             shipping_city,
@@ -307,7 +312,7 @@ function storeInvoice(req, res) {
 
                         sendOrderNotificationToStore(invoiceForEmail, itemsForEmail)
                             .catch(err => console.error("Errore invio mail allo store:", err));
-                            
+
                         return res.status(201).json({
                             success: true,
                             message: "Fattura creata correttamente",
@@ -316,7 +321,7 @@ function storeInvoice(req, res) {
                                 order_number,
                                 total_amount,
                                 shipping_cost: shipCost.toFixed(2),
-                                status: invoiceStatus,
+                                //status: invoiceStatus,
                                 name,
                                 surname,
                                 email,
@@ -353,7 +358,7 @@ function updateInvoice(req, res) {
         phone,
         email,
         shipping_cost,
-        status,
+        //status,
         items,
     } = req.body;
 
@@ -380,7 +385,7 @@ function updateInvoice(req, res) {
     }
 
     const productIds = items.map(it => it.product_id);
-    const invoiceStatus = status || 'pending';
+    //const invoiceStatus = status || 'pending';
 
     connection.beginTransaction(err => {
         if (err) {
@@ -466,7 +471,6 @@ function updateInvoice(req, res) {
             SET
               total_amount = ?,
               shipping_cost = ?,
-              status = ?,
               shipping_address = ?,
               shipping_cap = ?,
               shipping_city = ?,
@@ -485,7 +489,7 @@ function updateInvoice(req, res) {
                     const invParams = [
                         total_amount,
                         shipCost,
-                        invoiceStatus,
+                        //invoiceStatus,
                         shipping_address,
                         shipping_cap,
                         shipping_city,
@@ -575,14 +579,14 @@ function deleteInvoice(req, res) {
             return res.status(500).json({ error: "Errore nell'avvio della transazione" });
         }
 
-        // prima eliminiamo i pagamenti (se usi la tabella payments)
-        const delPaymentsSql = 'DELETE FROM payments WHERE invoice_id = ?';
+        // prima eliminiamo i pagamenti 
+        /* const delPaymentsSql = 'DELETE FROM payments WHERE invoice_id = ?';
         connection.query(delPaymentsSql, [invoiceId], (errPay) => {
             if (errPay) {
                 return connection.rollback(() => {
                     res.status(500).json({ error: "Errore nell'eliminazione dei pagamenti collegati" });
                 });
-            }
+            }  al momento, sgancio payments dalla delete*/
 
             // poi le righe di product_invoice
             const delLinesSql = 'DELETE FROM product_invoice WHERE invoice_id = ?';
@@ -623,8 +627,7 @@ function deleteInvoice(req, res) {
                 });
             });
         });
-    });
-}
+    };
 
 module.exports = {
     index,

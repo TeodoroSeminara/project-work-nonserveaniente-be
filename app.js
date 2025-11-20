@@ -20,7 +20,9 @@ const productRouter = require("./routers/productRouter")
 const invoiceRouter = require("./routers/invoiceRouter");
 
 // rotta payment
-const paymentRouter = require("./routers/paymentRouter");
+//const paymentRouter = require("./routers/paymentRouter");
+
+const braintreeRouter = require("./routers/braintreeRouter")
 
 // importiamo CORS
 const cors = require("cors");
@@ -42,7 +44,10 @@ app.use(imagePath);
 app.use("/api/nonserveaniente/invoices", invoiceRouter);
 
 // payments
-app.use("/api/nonserveaniente/payments", paymentRouter);
+//app.use("/api/nonserveaniente/payments", paymentRouter);
+
+// braintree
+app.use("/api/nonserveaniente/carrello", braintreeRouter);
 
 // product
 app.use("/api/nonserveaniente", productRouter);
