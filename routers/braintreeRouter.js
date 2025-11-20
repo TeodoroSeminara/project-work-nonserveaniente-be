@@ -3,7 +3,7 @@ const express = require("express");
 const router = express.Router();
 const braintree = require("braintree");
 
-const connection = require("../data/db");              // stesso db usato da invoiceController
+const connection = require("../data/db");
 const { storeInvoice } = require("../controllers/invoiceController");
 
 // Configurazione Braintree
@@ -17,7 +17,7 @@ const gateway = new braintree.BraintreeGateway({
   privateKey: process.env.BRAINTREE_PRIVATE_KEY,
 });
 
-// (facoltativo) GET /token per la Drop-in UI
+// GET /token per la Drop-in UI
 router.get("/token", async (req, res) => {
   try {
     const response = await gateway.clientToken.generate({});
@@ -59,34 +59,37 @@ router.post("/checkout", (req, res) => {
     return res.status(400).json({ error: "items mancante o vuoto" });
   }
 
-  const productIds = items.map((it) => it.product_id);
+  // ✅ CORRETTO: usa slug invece di product_id
+  const productSlugs = items.map((it) => it.slug);
 
-  // recupero prezzi dal DB
-  const placeholders = productIds.map(() => "?").join(",");
-  const sql = `SELECT id, price FROM products WHERE id IN (${placeholders})`;
+  // recupero prezzi dal DB usando slug
+  const placeholders = productSlugs.map(() => "?").join(",");
+  const sql = `SELECT id, slug, price FROM products WHERE slug IN (${placeholders})`;
 
-  connection.query(sql, productIds, (err, rows) => {
+  connection.query(sql, productSlugs, (err, rows) => {
     if (err) {
       console.error("Errore query prodotti:", err);
       return res.status(500).json({ error: "Errore recupero prodotti" });
     }
 
-    if (rows.length !== productIds.length) {
+    // ✅ CORRETTO: confronta con productSlugs
+    if (rows.length !== productSlugs.length) {
       return res
         .status(400)
         .json({ error: "Alcuni prodotti non esistono nel database" });
     }
 
-    // mappa id -> price
+    // ✅ CORRETTO: mappa slug -> price
     const priceMap = {};
     rows.forEach((row) => {
-      priceMap[row.id] = Number(row.price);
+      priceMap[row.slug] = Number(row.price);
     });
 
     // calcolo totale items
     let itemsTotal = 0;
     for (const it of items) {
-      const price = priceMap[it.product_id];
+      // ✅ CORRETTO: usa slug per il lookup
+      const price = priceMap[it.slug];
       const qty = Number(it.quantity || 0);
 
       if (!price || qty <= 0) {
@@ -106,7 +109,7 @@ router.post("/checkout", (req, res) => {
     // ora pago con Braintree usando il totale calcolato
     gateway.transaction.sale(
       {
-        amount: totalAmount.toFixed(2), // Braintree vuole una stringa tipo '45.99'
+        amount: totalAmount.toFixed(2),
         paymentMethodNonce,
         options: {
           submitForSettlement: true,
@@ -125,7 +128,6 @@ router.post("/checkout", (req, res) => {
         // pagamento ok
         const transactionId = result.transaction.id;
 
-        
         req.body = {
           shipping_address,
           shipping_cap,
@@ -142,7 +144,6 @@ router.post("/checkout", (req, res) => {
           shipping_cost,
           items,
 
-          //status: "paid",
           payment_provider: "braintree",
           payment_transaction_id: transactionId,
         };
