@@ -377,11 +377,14 @@ function updateInvoice(req, res) {
 
     const shipCost = Number(shipping_cost || 0);
     if (isNaN(shipCost) || shipCost < 0) {
-        return res.status(400).json({ error: "shipping_cost non valido" });
+        return res.status(400).json({ error: "Costo spedizione non valido" });
     }
 
-    if (items.some(it => !it.product_id || !it.quantity)) {
-        return res.status(400).json({ error: "Ogni elemento di items deve avere product_id e quantity" });
+    if (items.some(it => !it.product_id)) {
+        return res.status(400).json({ error: "Non c'è nessun prodotto" });
+    }
+    if (items.some(it => !it.quantity)) {
+        return res.status(400).json({ error: "La quantità deve essere superiore a 0" });
     }
 
     const productIds = items.map(it => it.product_id);
@@ -412,8 +415,7 @@ function updateInvoice(req, res) {
                 const productsSql = `
           SELECT id, name, price
           FROM products
-          WHERE id IN (?)
-        `;
+          WHERE id IN (?)`;
 
                 connection.query(productsSql, [productIds], (errProd, prodRows) => {
                     if (errProd) {
@@ -483,8 +485,7 @@ function updateInvoice(req, res) {
               surname = ?,
               phone = ?,
               email = ?
-            WHERE id = ?
-          `;
+            WHERE id = ?          `;
 
                     const invParams = [
                         total_amount,
@@ -588,46 +589,46 @@ function deleteInvoice(req, res) {
                 });
             }  al momento, sgancio payments dalla delete*/
 
-            // poi le righe di product_invoice
-            const delLinesSql = 'DELETE FROM product_invoice WHERE invoice_id = ?';
-            connection.query(delLinesSql, [invoiceId], (errLines) => {
-                if (errLines) {
+        // poi le righe di product_invoice
+        const delLinesSql = 'DELETE FROM product_invoice WHERE invoice_id = ?';
+        connection.query(delLinesSql, [invoiceId], (errLines) => {
+            if (errLines) {
+                return connection.rollback(() => {
+                    res.status(500).json({ error: "Errore nell'eliminazione delle righe fattura" });
+                });
+            }
+
+            // infine la fattura
+            const delInvSql = 'DELETE FROM invoices WHERE id = ?';
+            connection.query(delInvSql, [invoiceId], (errInv, resultInv) => {
+                if (errInv) {
                     return connection.rollback(() => {
-                        res.status(500).json({ error: "Errore nell'eliminazione delle righe fattura" });
+                        res.status(500).json({ error: "Errore nell'eliminazione della fattura" });
                     });
                 }
 
-                // infine la fattura
-                const delInvSql = 'DELETE FROM invoices WHERE id = ?';
-                connection.query(delInvSql, [invoiceId], (errInv, resultInv) => {
-                    if (errInv) {
+                if (resultInv.affectedRows === 0) {
+                    return connection.rollback(() => {
+                        res.status(404).json({ error: "Fattura non trovata" });
+                    });
+                }
+
+                connection.commit(errCommit => {
+                    if (errCommit) {
                         return connection.rollback(() => {
-                            res.status(500).json({ error: "Errore nell'eliminazione della fattura" });
+                            res.status(500).json({ error: "Errore nel commit della transazione" });
                         });
                     }
 
-                    if (resultInv.affectedRows === 0) {
-                        return connection.rollback(() => {
-                            res.status(404).json({ error: "Fattura non trovata" });
-                        });
-                    }
-
-                    connection.commit(errCommit => {
-                        if (errCommit) {
-                            return connection.rollback(() => {
-                                res.status(500).json({ error: "Errore nel commit della transazione" });
-                            });
-                        }
-
-                        return res.json({
-                            success: true,
-                            deleted_invoice_id: invoiceId,
-                        });
+                    return res.json({
+                        success: true,
+                        deleted_invoice_id: invoiceId,
                     });
                 });
             });
         });
-    };
+    });
+};
 
 module.exports = {
     index,
