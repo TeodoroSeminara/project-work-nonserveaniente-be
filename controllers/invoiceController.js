@@ -182,7 +182,7 @@ function storeInvoice(req, res) {
                 });
             }
 
-            const total_amount = (totalItems + shipCost).toFixed(2);
+            const total_amount = Number((totalItems + shipCost).toFixed(2));
 
             // 3) inseriamo la fattura
             const invSql = `
@@ -319,8 +319,8 @@ function storeInvoice(req, res) {
                             invoice: {
                                 id: invoiceId,
                                 order_number,
-                                total_amount,
-                                shipping_cost: shipCost.toFixed(2),
+                                total_amount: Number(total_amount),
+                                shipping_cost: Number(shipCost.toFixed(2)),
                                 //status: invoiceStatus,
                                 name,
                                 surname,
@@ -330,8 +330,8 @@ function storeInvoice(req, res) {
                                 product_id: l.product_id,
                                 name_product: l.name_product,
                                 quantity: l.quantity,
-                                unit_price: l.unit_price.toFixed(2),
-                                price_for_quantity: l.price_for_quantity.toFixed(2),
+                                unit_price: Number(l.unit_price.toFixed(2)),
+                                price_for_quantity: Number(l.price_for_quantity.toFixed(2)),
                             })),
                         });
                     });
@@ -463,7 +463,7 @@ function updateInvoice(req, res) {
                         });
                     }
 
-                    const total_amount = (totalItems + shipCost).toFixed(2);
+                    const total_amount = Number((totalItems + shipCost).toFixed(2));
 
                     // 2) aggiorniamo la fattura
                     const invSql = `
