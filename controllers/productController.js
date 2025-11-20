@@ -17,29 +17,6 @@ function generateSlug(name) {
     .replace(/^-+|-+$/g, '');
 }
 
-// INDEX - restituisce anche lo slug
-// function index(req, res) {
-//   const sql = `
-//     SELECT p.*, 
-//       MIN(pi.image_url) AS image_url
-//     FROM products p
-//     LEFT JOIN product_images pi ON p.id = pi.product_id
-//     GROUP BY p.id`;
-//   connection.query(sql, (err, result) => {
-//     if (err) return res.status(500).json({ error: "Database error" });
-//     const products = result.map((product) => {
-//       return {
-//         name: product.name,
-//         description: product.description,
-//         price: product.price,
-//         slug: product.slug,
-//         image_url: req.imagePath + product.image_url,
-//       };
-//     });
-//     res.json(products);
-//   });
-// }
-
 // SHOW con lo slug, al posto dell'id va usato il nome slug
 function show(req, res) {
   const slug = req.params.slug;
@@ -64,35 +41,94 @@ function show(req, res) {
 }
 
 // STORE - insert con slug
+// function storeProduct(req, res) {
+//   const { name, description, price } = req.body;
+//   const slug = generateSlug(name);
+
+//   const sqlProdotto = "INSERT INTO products (name, description, price, slug) VALUES (?, ?, ?, ?)";
+//   connection.query(sqlProdotto, [name, description, price, slug], (err, result) => {
+//     if (err) {
+//       return res.status(500).json({ error: "Errore nel salvataggio prodotto" });
+//     }
+
+//     const productId = result.insertId;
+
+//     if (req.files && req.files.length > 0) {
+//       const imagesToInsert = req.files.map(file => [productId, file.filename]);
+//       const sqlImmagini = "INSERT INTO product_images (product_id, image_url) VALUES ?";
+//       connection.query(sqlImmagini, [imagesToInsert], (err2) => {
+//         if (err2) return res.status(500).json({ error: "Errore nel salvataggio immagini" });
+//         return res.json({
+//           success: true,
+//           slug,
+//           immagini: imagesToInsert.map(i => i[1])
+//         });
+//       });
+//     } else {
+//       return res.json({
+//         success: true,
+//         slug
+//       });
+//     }
+//   });
+// }
+
 function storeProduct(req, res) {
   const { name, description, price } = req.body;
-  const slug = generateSlug(name);
+  let baseSlug = generateSlug(name);
 
-  const sqlProdotto = "INSERT INTO products (name, description, price, slug) VALUES (?, ?, ?, ?)";
-  connection.query(sqlProdotto, [name, description, price, slug], (err, result) => {
-    if (err) {
-      return res.status(500).json({ error: "Errore nel salvataggio prodotto" });
+  // Step 1: cerca slug simili
+  const sqlCheckSlug = `
+    SELECT slug FROM products WHERE slug = ? OR slug LIKE CONCAT(?, '-%')
+  `;
+  connection.query(sqlCheckSlug, [baseSlug, baseSlug], (err, results) => {
+    if (err) return res.status(500).json({ error: "Errore controllo slug" });
+
+    let finalSlug = baseSlug;
+
+    if (results.length > 0) {
+      // Filtra solo gli slug esistenti e trova il numero massimo
+      // Esempio: slug, slug-1, slug-2, slug-12
+      let maxN = 0;
+      results.forEach(row => {
+        const match = row.slug.match(new RegExp(`^${baseSlug}-(\\d+)$`));
+        if (match) {
+          const n = parseInt(match[1]);
+          if (n > maxN) maxN = n;
+        } else if (row.slug === baseSlug) {
+          maxN = 1; // almeno uno slug base già c'è
+        }
+      });
+      finalSlug = `${baseSlug}-${maxN + 1}`;
     }
 
-    const productId = result.insertId;
+    // Step 2: inserisci prodotto con lo slug calcolato
+    const sqlProdotto = "INSERT INTO products (name, description, price, slug) VALUES (?, ?, ?, ?)";
+    connection.query(sqlProdotto, [name, description, price, finalSlug], (err2, result) => {
+      if (err2) {
+        return res.status(500).json({ error: "Errore nel salvataggio prodotto" });
+      }
 
-    if (req.files && req.files.length > 0) {
-      const imagesToInsert = req.files.map(file => [productId, file.filename]);
-      const sqlImmagini = "INSERT INTO product_images (product_id, image_url) VALUES ?";
-      connection.query(sqlImmagini, [imagesToInsert], (err2) => {
-        if (err2) return res.status(500).json({ error: "Errore nel salvataggio immagini" });
+      const productId = result.insertId;
+
+      if (req.files && req.files.length > 0) {
+        const imagesToInsert = req.files.map(file => [productId, file.filename]);
+        const sqlImmagini = "INSERT INTO product_images (product_id, image_url) VALUES ?";
+        connection.query(sqlImmagini, [imagesToInsert], (err3) => {
+          if (err3) return res.status(500).json({ error: "Errore nel salvataggio immagini" });
+          return res.json({
+            success: true,
+            slug: finalSlug,
+            immagini: imagesToInsert.map(i => i[1])
+          });
+        });
+      } else {
         return res.json({
           success: true,
-          slug,
-          immagini: imagesToInsert.map(i => i[1])
+          slug: finalSlug
         });
-      });
-    } else {
-      return res.json({
-        success: true,
-        slug
-      });
-    }
+      }
+    });
   });
 }
 
@@ -284,7 +320,9 @@ function filteredIndex(req, res) {
   sql += " GROUP BY p.id";
 
   // SORTING
-  if (sort === "price_asc") sql += " ORDER BY p.price ASC";
+
+  if (sort === "random") { sql += " ORDER BY RAND()"; }
+  else if (sort === "price_asc") { sql += " ORDER BY p.price ASC"; }
   else if (sort === "price_desc") sql += " ORDER BY p.price DESC";
   else if (sort === "name_asc") sql += " ORDER BY p.name ASC";
   else if (sort === "name_desc") sql += " ORDER BY p.name DESC";
