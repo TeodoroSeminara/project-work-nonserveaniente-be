@@ -9,10 +9,14 @@ const upload = require('../controllers/upload')
 const router = express.Router();
 
 // index
-router.get('/', productController.index);
+// router.get('/', productController.index);
+
+// Rotta per ricerca e filtri
+router.get('/', productController.filteredIndex);
 
 // show by slug — attenzione: questa rotta ora gestisce lo slug come unico identificatore!
 router.get('/:slug', productController.show);
+
 
 // crea prodotto
 router.post('/', upload.array('images'), productController.storeProduct);
