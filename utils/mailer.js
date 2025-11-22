@@ -60,6 +60,10 @@ Indirizzo di spedizione:
 ${invoice.shipping_address}
 ${invoice.shipping_cap} ${invoice.shipping_city}
 
+Indirizzo di fatturazione: 
+${invoice.billing_address}
+${invoice.billing_cap} ${invoice.billing_city}
+
 Se hai domande, rispondi pure a questa mail.
 
 A presto,
@@ -67,25 +71,58 @@ Non Serve A Niente
   `.trim();
 
     const htmlBody = `
-    <h1>Grazie per il tuo ordine, ${invoice.name}!</h1>
-    <p>Abbiamo ricevuto il tuo ordine su <strong>Non Serve A Niente</strong>.</p>
-    <p><strong>Numero ordine:</strong> ${invoice.order_number}</p>
-    <p><strong>Totale:</strong> €${invoice.total_amount}</p>
-    <p><strong>Spedizione:</strong> €${invoice.shipping_cost}</p>
+    <div style="font-family: Arial, sans-serif; background-color:#f7f7f7; padding:20px;">
+    <div style="max-width:600px; margin:0 auto; background:#ffffff; padding:30px; border-radius:8px;">
 
-    <h3>Riepilogo prodotti</h3>
-    <ul>
-      ${html}
-    </ul>
+      <h1 style="color:#000; font-size:24px; margin-bottom:10px;">
+        🎉 Grazie per il tuo ordine, ${invoice.name}!
+      </h1>
 
-    <h3>Indirizzo di spedizione</h3>
-    <p>
-      ${invoice.shipping_address}<br/>
-      ${invoice.shipping_cap} ${invoice.shipping_city}
-    </p>
+      <p style="font-size:16px; line-height:1.5; color:#333;">
+        Il tuo acquisto su <strong>Non Serve A Niente</strong> è andato a buon fine.  
+        Preparati a ricevere cose meravigliosamente inutili. 🖤
+      </p>
 
-    <p>Se hai domande, non fartele.</p>
-    <p>Ci auguriamo che tu voglia investire ancora in cose inutili,<br/>Non Serve A Niente</p>
+      <div style="margin:25px 0; padding:15px; background:#fafafa; border-left:4px solid #000;">
+        <p style="margin:0; font-size:16px;">
+          <strong>Numero ordine:</strong> ${invoice.order_number}<br/>
+          <strong>Totale:</strong> €${invoice.total_amount}<br/>
+          <strong>Spedizione:</strong> €${invoice.shipping_cost}
+        </p>
+      </div>
+
+      <h2 style="font-size:20px; margin-top:30px;">🛒 Riepilogo prodotti</h2>
+      <ul style="padding-left:20px; color:#333; font-size:15px; line-height:1.5;">
+        ${html}
+      </ul>
+
+      <h2 style="font-size:20px; margin-top:30px;">📦 Indirizzo di spedizione</h2>
+      <p style="font-size:16px; line-height:1.5; color:#333;">
+        ${invoice.shipping_address}<br/>
+        ${invoice.shipping_cap} ${invoice.shipping_city}
+      </p>
+
+      <h2 style="font-size:20px; margin-top:30px;">📦 Indirizzo di fatturazione</h2>
+      <p style="font-size:16px; line-height:1.5; color:#333;">
+      ${invoice.billing_address}<br/>
+        ${invoice.billing_cap} ${invoice.billing_city}
+      </p>
+
+      <div style="margin-top:30px; padding:20px; background:#000; color:#fff; text-align:center; border-radius:6px;">
+        <p style="margin:0; font-size:16px; line-height:1.6;">
+          Hai domande?  
+          Non fartele.<br/>
+          (Oppure rispondi a questa mail, va bene lo stesso.)
+        </p>
+      </div>
+
+      <p style="margin-top:25px; font-size:15px; color:#555; text-align:center;">
+        Grazie per aver investito in cose inutili 💸<br/>
+        <strong>Non Serve A Niente</strong>
+      </p>
+
+    </div>
+  </div>
   `;
 
     await transporter.sendMail({
