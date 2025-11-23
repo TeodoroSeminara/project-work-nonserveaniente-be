@@ -24,6 +24,8 @@ const invoiceRouter = require("./routers/invoiceRouter");
 
 const braintreeRouter = require("./routers/braintreeRouter")
 
+const chatRouter = require("./routers/chatRouter")
+
 // importiamo CORS
 const cors = require("cors");
 
@@ -51,6 +53,9 @@ app.use("/api/nonserveaniente/carrello", braintreeRouter);
 
 // product
 app.use("/api/nonserveaniente", productRouter);
+
+//chatbot
+app.use("/api/nonserveaniente/chat", chatRouter);
 
 // impostiamo la rotta di home
 app.get("/api", (req, res) => {
