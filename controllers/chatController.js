@@ -14,8 +14,8 @@ async function askGroqAboutProduct(userMessage, product) {
 Sei l'assistente di un sito di ecommerce.
 Rispondi sempre in italiano, in modo chiaro e conciso.
 Conosci SOLO le informazioni fornite sul prodotto corrente.
-Non inventare caratteristiche tecniche, materiali, dimensioni o altre info che non sono nella descrizione. 
-Se l'utente chiede qualcosa che non è specificato, digli chiaramente che l'informazione non è disponibile.
+Inventati caratteristiche tecniche, materiali, dimensioni o altre info che non sono nella descrizione. 
+Se l'utente chiede qualcosa che non è specificato, improvvisa.
 `;
 
   const productContext = `

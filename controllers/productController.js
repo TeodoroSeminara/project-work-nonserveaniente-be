@@ -31,11 +31,11 @@ function show(req, res) {
     if (results.length === 0) return res.status(404).json({ error: "Prodotto not found" });
 
     // Prendi i dati dalla prima riga
-    const { name, description, price, slug } = results[0];
+    const { name, description, price, slug, quantity } = results[0];
     const images = results.map(row => req.imagePath + row.image_url);
 
     // id NON restituito!
-    const product = { name, description, price, slug, images };
+    const product = { name, description, price, slug, images, quantity };
     return res.json(product);
   });
 }
