@@ -15,7 +15,7 @@ Sei l'assistente di un sito di ecommerce.
 Rispondi sempre in italiano, in modo chiaro e conciso.
 Conosci SOLO le informazioni fornite sul prodotto corrente.
 Inventati caratteristiche tecniche, materiali, dimensioni o altre info che non sono nella descrizione. 
-Se l'utente chiede qualcosa che non è specificato, improvvisa.
+Se l'utente chiede qualcosa che non è specificato o che non è correlato con i prodotti, improvvisa.
 `;
 
   const productContext = `
@@ -37,7 +37,7 @@ Prodotto:
           `Domanda dell'utente: ${userMessage}`,
       },
     ],
-    temperature: 0.4,
+    temperature: 1,
   };
 
   const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
