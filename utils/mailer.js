@@ -1,50 +1,52 @@
 // mailer.js
+const path = require("path");
 const nodemailer = require("nodemailer");
 
 const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 587,
-    secure: false, 
-    auth: {
-        user: process.env.SMTP_USER, 
-        pass: process.env.SMTP_PASS, 
-    },
-    
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false,
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
+
 });
 
 // debug
 transporter.verify((error, success) => {
-    if (error) {
-        console.error("Errore configurazione SMTP:", error);
-    } else {
-        console.log("SMTP pronto per inviare email");
-    }
+  if (error) {
+    console.error("Errore configurazione SMTP:", error);
+  } else {
+    console.log("PATH IMG:", path.join(__dirname, '..', 'data', 'nsan-banner.png'));
+    console.log("SMTP pronto per inviare email");
+  }
 });
 
 // Costruisce il riepilogo prodotti in testo + html
 function buildOrderSummaryLines(items) {
-    // items: array tipo [{ name_product, quantity, unit_price, price_for_quantity }, ...]
-    let textLines = [];
-    let htmlLines = [];
+  // items: array tipo [{ name_product, quantity, unit_price, price_for_quantity }, ...]
+  let textLines = [];
+  let htmlLines = [];
 
-    for (const it of items) {
-        const lineText = `${it.quantity}x ${it.name_product} - €${Number(it.price_for_quantity).toFixed(2)}`;
-        const lineHtml = `<li>${it.quantity}x ${it.name_product} - €${Number(it.price_for_quantity).toFixed(2)}</li>`;
-        textLines.push(lineText);
-        htmlLines.push(lineHtml);
-    }
+  for (const it of items) {
+    const lineText = `${it.quantity}x ${it.name_product} - €${Number(it.price_for_quantity).toFixed(2)}`;
+    const lineHtml = `<li>${it.quantity}x ${it.name_product} - €${Number(it.price_for_quantity).toFixed(2)}</li>`;
+    textLines.push(lineText);
+    htmlLines.push(lineHtml);
+  }
 
-    return {
-        text: textLines.join("\n"),
-        html: htmlLines.join(""),
-    };
+  return {
+    text: textLines.join("\n"),
+    html: htmlLines.join(""),
+  };
 }
 
 // Mail al cliente
 async function sendOrderConfirmationToCustomer(invoice, items) {
-    const { text, html } = buildOrderSummaryLines(items);
+  const { text, html } = buildOrderSummaryLines(items);
 
-    const plainText = `
+  const plainText = `
 Ciao ${invoice.name},
 
 grazie per il tuo ordine su Non Serve A Niente! 🖤
@@ -70,9 +72,13 @@ A presto,
 Non Serve A Niente
   `.trim();
 
-    const htmlBody = `
+  const htmlBody = `
     <div style="font-family: Arial, sans-serif; background-color:#f7f7f7; padding:20px;">
     <div style="max-width:600px; margin:0 auto; background:#ffffff; padding:30px; border-radius:8px;">
+
+<img src="cid:nsan-banner"
+             alt="Non Serve A Niente"
+             style="width:100%; margin-bottom:25px; border-radius:8px;" />
 
       <h1 style="color:#000; font-size:24px; margin-bottom:10px;">
         🎉 Grazie per il tuo ordine, ${invoice.name}!
@@ -124,23 +130,30 @@ Non Serve A Niente
     </div>
   </div>
   `;
-
-    await transporter.sendMail({
-        from: process.env.FROM_EMAIL,
-        to: invoice.email,
-        subject: `Conferma ordine #${invoice.order_number}`,
-        text: plainText,
-        html: htmlBody,
-    });
+  
+  await transporter.sendMail({
+    from: process.env.FROM_EMAIL,
+    to: invoice.email,
+    subject: `Conferma ordine #${invoice.order_number}`,
+    text: plainText,
+    html: htmlBody,
+    attachments: [
+      {
+        filename: 'nsan-banner.png',
+        path: path.join(__dirname, '..', 'data', 'nsan-banner.png'),
+        cid: 'nsan-banner'
+      }
+    ]
+  });
 }
 
 // Mail allo shop
 async function sendOrderNotificationToStore(invoice, items) {
-    const { text, html } = buildOrderSummaryLines(items);
+  const { text, html } = buildOrderSummaryLines(items);
 
-    const storeEmail = process.env.STORE_EMAIL;
+  const storeEmail = process.env.STORE_EMAIL;
 
-    const plainText = `
+  const plainText = `
 Nuovo ordine ricevuto su Non Serve A Niente
 
 Numero ordine: ${invoice.order_number}
@@ -165,7 +178,7 @@ ${invoice.billing_address || "-"}
 ${invoice.billing_cap || ""} ${invoice.billing_city || ""}
   `.trim();
 
-    const htmlBody = `
+  const htmlBody = `
     <h2>Nuovo ordine ricevuto</h2>
     <p><strong>Numero ordine:</strong> ${invoice.order_number}</p>
     <p><strong>Data:</strong> ${invoice.created_at || "N/A"}</p>
@@ -199,16 +212,16 @@ ${invoice.billing_cap || ""} ${invoice.billing_city || ""}
     </p>
   `;
 
-    await transporter.sendMail({
-        from: process.env.STORE_FROM_EMAIL,
-        to: storeEmail,
-        subject: `Nuovo ordine #${invoice.order_number}`,
-        text: plainText,
-        html: htmlBody,
-    });
+  await transporter.sendMail({
+    from: process.env.STORE_FROM_EMAIL,
+    to: storeEmail,
+    subject: `Nuovo ordine #${invoice.order_number}`,
+    text: plainText,
+    html: htmlBody,
+  });
 }
 
 module.exports = {
-    sendOrderConfirmationToCustomer,
-    sendOrderNotificationToStore,
-};
+  sendOrderConfirmationToCustomer,
+  sendOrderNotificationToStore,
+}; 
