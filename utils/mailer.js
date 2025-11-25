@@ -89,7 +89,7 @@ Non Serve A Niente
         Preparati a ricevere cose meravigliosamente inutili. 🖤
       </p>
 
-      <div style="margin:25px 0; padding:15px; background:#fafafa; border-left:4px solid #000;">
+      <div style="margin:25px 0; padding:15px; background:#fafafa; border-left:4px solid #f47b73;">
         <p style="margin:0; font-size:16px;">
           <strong>Numero ordine:</strong> ${invoice.order_number}<br/>
           <strong>Totale:</strong> €${invoice.total_amount}<br/>
@@ -114,7 +114,7 @@ Non Serve A Niente
         ${invoice.billing_cap} ${invoice.billing_city}
       </p>
 
-      <div style="margin-top:30px; padding:20px; background:#000; color:#fff; text-align:center; border-radius:6px;">
+      <div style="margin-top:30px; padding:20px; background:#f47b73; color:#fff; text-align:center; border-radius:6px;">
         <p style="margin:0; font-size:16px; line-height:1.6;">
           Hai domande?  
           Non fartele.<br/>
